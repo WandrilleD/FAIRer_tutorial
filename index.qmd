@@ -1,0 +1,89 @@
+---
+title: "FAIRer tutorial"
+---
+
+This is a Quarto website.
+
+To learn more about Quarto websites visit <https://quarto.org/docs/websites>.
+
+```{r}
+1 + 1
+```
+
+## Introduction
+###### In this project we aim to visualize the trends of the most frequently used babynames from 1880 to 2017 in the United States. We do this by:
+* Understanding the different columns of the data set
+* Find the top 10 most frequently used baby names in the data for:
+  + girls
+  + boys
+* Plot the yearly trend of the top 10 baby names
+
+### Code for getting the most frequent babynames over a time-period
+###### Required packages
+
+```{r}
+library(babynames)
+library(knitr)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(pheatmap)
+```
+
+###### Display the first 10 lines of the babynames table:
+
+```{r}
+head(babynames) |> kable()
+```
+
+###### get_most_frequent: Gets the most frequent babynames over a time-period
+
+```{r}
+get_most_frequent <- function(babynames, select_sex, from = 1950) {
+  most_freq <- babynames |>
+    filter(sex == select_sex, year > from) |>
+    group_by(name) |>
+    summarise(average = mean(prop)) |>
+    arrange(desc(average))
+  
+  return(list(
+    babynames = babynames,
+    most_frequent = most_freq,
+    sex = select_sex,
+    from = from))
+}
+
+plot_top <- function(x, top = 10) {
+  topx <- x$most_frequent$name[1:top]
+  
+    p <- x$babynames |>
+    filter(name %in% topx, sex == x$sex, year > x$from) |>
+    ggplot(aes(x = year, y = prop, color = name)) +
+    geom_line() +
+    scale_color_brewer(palette = "Paired") +
+    theme_classic()
+  
+  return(p)
+}
+```
+
+Here we call the code to visualize the top 10 most frequent girl names from 1950 onwards:
+
+```{r}
+#| label: fig-line-girls
+#| fig-cap: "Line plot displaying proportion of top 10 girl names by year"
+get_most_frequent(babynames, select_sex = "F") |>
+  plot_top()
+```
+
+In @fig-line-girls you can see that there has been a peak in popularity for 'Lisa', 'Jennifer' and 'Jessica'. Interesting! Let's have a look at the boys names:
+
+```{r}
+#| label: fig-line-boys
+#| fig-cap: "Line plot displaying proportion of top 10 boy names by year"
+get_most_frequent(babynames, select_sex = "M") |>
+  plot_top()
+```
+
+@fig-line-boys shows that names that were popular before 1990 are relatively infrequent after 2000. 
+
